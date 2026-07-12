@@ -1,10 +1,15 @@
 /* ═══════════════════════════════════════════════════════════════
-   POKÉDEX FIELD GUIDE — app.js  v2
+   POKÉDEX FIELD GUIDE — app.js  v2  (proxy-ready)
    + Prev/Next Navigation        + Favorites system
    + Type Matchups               + Evolution Chain
    + Flavor text cycling         + Species data row
    + Base stat total             + Generation badge
    ═══════════════════════════════════════════════════════════════ */
+
+/* ── CONFIGURACIÓN DE API (proxy) ── */
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:3001'   // Local: backend en Render corre en este puerto
+  : '';                        // Producción: Vercel hará rewrite a Render
 
 /* ── TYPE DATA ── */
 const TYPE_COLORS = {
@@ -340,8 +345,10 @@ function renderMatchups(types) {
    EVOLUTION CHAIN
    ═══════════════════════════════════════════════════ */
 async function fetchEvoChain(url) {
+  // Extraer el ID de la URL de la cadena de evolución
   try {
-    const r = await fetch(url);
+    const id = url.split('/').filter(Boolean).pop();
+    const r = await fetch(`${API_BASE}/api/evolution-chain/${id}`);
     return r.ok ? r.json() : null;
   } catch { return null; }
 }
@@ -661,13 +668,17 @@ async function animateRelease(accentColor) {
    API
    ═══════════════════════════════════════════════════ */
 async function fetchPokemon(q) {
-  const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${String(q).toLowerCase().trim()}`);
+  const res = await fetch(`${API_BASE}/api/pokemon/${String(q).toLowerCase().trim()}`);
   if (!res.ok) throw new Error('Not found');
   return res.json();
 }
 
 async function fetchSpecies(url) {
-  try { const r = await fetch(url); return r.ok ? r.json() : null; } catch { return null; }
+  try {
+    const id = url.split('/').filter(Boolean).pop();
+    const r = await fetch(`${API_BASE}/api/pokemon-species/${id}`);
+    return r.ok ? r.json() : null;
+  } catch { return null; }
 }
 
 /* ═══════════════════════════════════════════════════
