@@ -8,7 +8,7 @@ const CACHE_STATIC = `pokedex-static-${VERSION}`;
 const CACHE_API    = `pokedex-api-${VERSION}`;
 const CACHE_IMG    = `pokedex-img-${VERSION}`;
 
-/* Assets to pre-cache on install — RUTAS ABSOLUTAS DESDE LA RAÍZ */
+/* Assets to pre-cache on install — rutas absolutas desde la raíz */
 const STATIC_ASSETS = [
   '/',
   '/index.html',
