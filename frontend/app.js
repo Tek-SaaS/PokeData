@@ -1016,4 +1016,11 @@ document.addEventListener('DOMContentLoaded', () => {
   show($('welcomeState'));
   if (!state.recents.length) setTimeout(() => loadPokemon('pikachu'), 500);
   else loadPokemon(state.recents[0].name);
+
+  // ─── REGISTRO DEL SERVICE WORKER (NUEVO) ───
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => console.log('✅ Service Worker registrado con éxito', reg))
+      .catch(err => console.error('❌ Error al registrar SW:', err));
+  }
 });
