@@ -8,15 +8,15 @@ const CACHE_STATIC = `pokedex-static-${VERSION}`;
 const CACHE_API    = `pokedex-api-${VERSION}`;
 const CACHE_IMG    = `pokedex-img-${VERSION}`;
 
-/* Assets to pre-cache on install */
+/* Assets to pre-cache on install — RUTAS ABSOLUTAS DESDE LA RAÍZ */
 const STATIC_ASSETS = [
-  '/PokeData/',
-  '/PokeData/index.html',
-  '/PokeData/style.css',
-  '/PokeData/app.js',
-  '/PokeData/manifest.json',
-  '/PokeData/icons/icon-192.png',
-  '/PokeData/icons/icon-512.png',
+  '/',
+  '/index.html',
+  '/style.css',
+  '/app.js',
+  '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 /* Offline fallback page (inline) */
