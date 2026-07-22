@@ -1,9 +1,10 @@
 /* ═══════════════════════════════════════════════════════════════
-   POKÉDEX FIELD GUIDE — app.js  v2  (proxy-ready)
+   POKÉDEX FIELD GUIDE — app.js  v2.1  (cold start + home)
    + Prev/Next Navigation        + Favorites system
    + Type Matchups               + Evolution Chain
    + Flavor text cycling         + Species data row
    + Base stat total             + Generation badge
+   + Cold‑start friendly loading + Home button
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── CONFIGURACIÓN DE API (proxy) ── */
@@ -345,7 +346,6 @@ function renderMatchups(types) {
    EVOLUTION CHAIN
    ═══════════════════════════════════════════════════ */
 async function fetchEvoChain(url) {
-  // Extraer el ID de la URL de la cadena de evolución
   try {
     const id = url.split('/').filter(Boolean).pop();
     const r = await fetch(`${API_BASE}/api/evolution-chain/${id}`);
@@ -399,7 +399,6 @@ function renderEvoChain(stages, currentName) {
   const section = $('evoSection');
   const el      = $('evoChain');
 
-  // Hide if only one stage (no evolution)
   if (stages.length <= 1) {
     section.style.display = 'none';
     return;
@@ -409,7 +408,6 @@ function renderEvoChain(stages, currentName) {
 
   stages.forEach((stageMons, stageIdx) => {
     if (stageIdx > 0) {
-      // Build connector(s) — one per mon in this stage
       const connWrap = document.createElement('div');
       connWrap.style.cssText = 'display:flex;flex-direction:column;gap:.35rem;align-self:center;';
       stageMons.forEach(mon => {
@@ -425,7 +423,6 @@ function renderEvoChain(stages, currentName) {
       el.appendChild(connWrap);
     }
 
-    // Stage column
     const stageEl = document.createElement('div');
     stageEl.className = 'evo-stage';
 
@@ -476,11 +473,9 @@ function renderSpeciesRow(species) {
 
   const chips = [];
 
-  // Generation
   const gen = GEN_LABELS[species.generation?.name];
   if (gen) chips.push({ label: 'Generation', val: gen });
 
-  // Gender ratio
   const gr = species.gender_rate;
   if (gr === -1) {
     chips.push({ label: 'Gender', val: 'Genderless' });
@@ -489,17 +484,14 @@ function renderSpeciesRow(species) {
     chips.push({ label: 'Gender', val: `♂ ${100 - femPct}%  ♀ ${femPct}%` });
   }
 
-  // Egg groups
   if (species.egg_groups?.length) {
     chips.push({ label: 'Egg Groups', val: species.egg_groups.map(e => capitalize(e.name)).join(', ') });
   }
 
-  // Base friendship
   if (species.base_happiness !== undefined) {
     chips.push({ label: 'Friendship', val: species.base_happiness });
   }
 
-  // Habitat
   if (species.habitat?.name) {
     chips.push({ label: 'Habitat', val: capitalize(species.habitat.name) });
   }
@@ -744,7 +736,6 @@ function renderPokemon(data, species) {
     }, 150);
   };
 
-  // Animated sprite badge
   const badge  = $('spriteBadge');
   const animEl = $('spriteAnim');
   if (animSprite) {
@@ -758,7 +749,6 @@ function renderPokemon(data, species) {
 
   $('pokeNumber').textContent = padId(data.id);
 
-  // Flavor text — collect all English entries, deduplicate
   state.flavorEntries = [];
   state.flavorIdx     = 0;
   if (species?.flavor_text_entries) {
@@ -782,42 +772,33 @@ function renderPokemon(data, species) {
     ? `${state.flavorEntries.length} entries — click to cycle`
     : 'Only one entry';
 
-  // Genus
   const genusEntry = species?.genera?.find(g => g.language.name === 'en');
   $('pokeGenus').textContent = genusEntry?.genus || '';
 
-  // Name
   $('pokeName').textContent = data.name;
 
-  // Metrics
   $('pokeHeight').textContent    = formatHeight(data.height);
   $('pokeWeight').textContent    = formatWeight(data.weight);
   $('pokeExp').textContent       = data.base_experience ?? '—';
   $('pokeCatchRate').textContent = species?.capture_rate ?? '—';
 
-  // Species row
   renderSpeciesRow(species);
 
-  // Gen badge
   const genLabel = GEN_LABELS[species?.generation?.name] || '';
   $('pokeGenBadge').textContent = genLabel;
 
-  // Types
   $('pokeTypes').innerHTML = types.map(t => {
     const c = TYPE_COLORS[t] || TYPE_COLORS.normal;
     return `<span class="type-badge" style="background:${c.hex}">${t}</span>`;
   }).join('');
 
-  // Abilities
   $('pokeAbilities').innerHTML = data.abilities.map(a => `
     <span class="ability-tag${a.is_hidden ? ' hidden-ability' : ''}">
       ${capitalize(a.ability.name)}${a.is_hidden ? ' ✦' : ''}
     </span>`).join('');
 
-  // Type Matchups
   renderMatchups(types);
 
-  // Stats
   const statTotal = data.stats.reduce((sum, s) => sum + s.base_stat, 0);
   $('pokeStats').innerHTML = data.stats.map(s => {
     const label = STAT_LABELS[s.stat.name] || s.stat.name;
@@ -836,15 +817,69 @@ function renderPokemon(data, species) {
     document.querySelectorAll('.stat-bar').forEach(b => b.style.width = b.dataset.pct + '%');
   }));
 
-  // Moves (first 12)
   $('pokeMoves').innerHTML = data.moves.slice(0, 12)
     .map(m => `<span class="move-tag">${capitalize(m.move.name)}</span>`).join('');
 
-  // Favorites button state
   updateFavBtn(data.name);
-
-  // Nav button states
   updateNavButtons(data.id);
+}
+
+/* ═══════════════════════════════════════════════════
+   LOADING MESSAGES (para cold start)
+   ═══════════════════════════════════════════════════ */
+const loadingMessages = [
+  '¡Preparando tu Pokédex!',
+  '¡Ash está llegando!',
+  '¡Atrapando señales de Kanto!',
+  '¡Los Pokémon están despertando!',
+  '¡El profesor Oak está emocionado!',
+  '¡Cargando datos de la región!',
+];
+const loadingSubs = [
+  'El profesor Oak está revisando sus datos...',
+  'Los Pokémon están viajando desde Kanto...',
+  '¡Parece que hay un Pikachu salvaje!',
+  'El profesor Oak está preparando tu guía...',
+  '¡La región de Johto está conectando!',
+  '¡Team Rocket no nos detendrá!',
+];
+let loadingInterval = null;
+
+function showLoadingWithMessages() {
+  const msgEl = document.getElementById('loadingMessage');
+  const subEl = document.getElementById('loadingSub');
+  let idx = 0;
+  if (msgEl) msgEl.textContent = loadingMessages[idx];
+  if (subEl) subEl.textContent = loadingSubs[0];
+
+  // Cambiar mensaje cada 3 segundos
+  loadingInterval = setInterval(() => {
+    idx = (idx + 1) % loadingMessages.length;
+    if (msgEl) {
+      msgEl.style.opacity = '0';
+      setTimeout(() => {
+        msgEl.textContent = loadingMessages[idx];
+        msgEl.style.opacity = '1';
+      }, 200);
+    }
+    if (subEl) {
+      const subIdx = Math.floor(Math.random() * loadingSubs.length);
+      subEl.style.opacity = '0';
+      setTimeout(() => {
+        subEl.textContent = loadingSubs[subIdx];
+        subEl.style.opacity = '1';
+      }, 300);
+    }
+  }, 3000);
+
+  show(document.getElementById('loadingState'));
+}
+
+function clearLoadingInterval() {
+  if (loadingInterval) {
+    clearInterval(loadingInterval);
+    loadingInterval = null;
+  }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -854,18 +889,23 @@ async function loadPokemon(nameOrId) {
   const currentType   = state.currentData?.types?.[0]?.type?.name || 'normal';
   const currentAccent = TYPE_COLORS[currentType]?.hex || '#9e9e9e';
   const isFirst       = state.isFirstLoad;
-  state.isFirstLoad   = false;
+
+  // Siempre que sea la primera carga, no usamos la animación de captura
+  if (isFirst) {
+    state.isFirstLoad = false;
+  }
 
   try {
     if (isFirst) {
-      hide($('welcomeState')); hide($('errorState'));
-      show($('loadingState'));
+      // ── Primera carga: mostrar loading con mensajes cambiantes ──
+      hide($('welcomeState'));
+      hide($('errorState'));
+      showLoadingWithMessages();
 
-      // Fetch Pokémon + species in parallel
+      // Fetch Pokémon + species en paralelo
       const data = await fetchPokemon(nameOrId);
-      const [species, evoChainData] = await Promise.all([
+      const [species] = await Promise.all([
         data.species?.url ? fetchSpecies(data.species.url) : Promise.resolve(null),
-        Promise.resolve(null), // placeholder
       ]);
 
       let evo = null;
@@ -873,6 +913,7 @@ async function loadPokemon(nameOrId) {
         evo = await fetchEvoChain(species.evolution_chain.url);
       }
 
+      clearLoadingInterval();
       hide($('loadingState'));
 
       const art = $('pokeArtwork');
@@ -898,6 +939,7 @@ async function loadPokemon(nameOrId) {
       setTimeout(() => playCry(data.cries?.latest), 600);
 
     } else {
+      // ── Cargas posteriores: usar animación de captura ──
       await animateCapture(currentAccent);
 
       const data = await fetchPokemon(nameOrId);
@@ -918,7 +960,8 @@ async function loadPokemon(nameOrId) {
       const artUrl = data.sprites?.other?.['official-artwork']?.front_default || data.sprites?.front_default || '';
       art.src = artUrl;
 
-      hide($('welcomeState')); hide($('errorState'));
+      hide($('welcomeState'));
+      hide($('errorState'));
       renderPokemon(data, species);
 
       if (evo?.chain) {
@@ -944,6 +987,8 @@ async function loadPokemon(nameOrId) {
     }
 
   } catch (err) {
+    // ── Error: limpiar loading y mostrar error amigable ──
+    clearLoadingInterval();
     const ball = $('pbBall');
     if (ball) ball.className = 'pb-ball';
     $('pb-overlay').classList.remove('pb-active');
@@ -951,13 +996,48 @@ async function loadPokemon(nameOrId) {
     if (art) art.style.cssText = '';
     [$('pokeName'), $('pokeGenus')].forEach(el => { if (el) el.style.cssText = ''; });
     hide($('loadingState'));
-    $('errorMsg').textContent = `"${nameOrId}" was not found in the Pokédex. Try a name or number.`;
+
+    // Mensaje de error más humano
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.innerHTML = `
+      No pudimos conectar con el Profesor Oak.<br>
+      <small>Puede que el servidor esté despertando. Intenta de nuevo o elige un Pokémon popular.</small>
+    `;
     show($('errorState'));
   }
 }
 
 async function loadRandom() {
   await loadPokemon(Math.floor(Math.random() * MAX_DEX_ID) + 1);
+}
+
+/* ── BOTÓN INICIO ── */
+function goHome() {
+  // Limpiar cualquier estado en curso
+  clearLoadingInterval();
+  const ball = $('pbBall');
+  if (ball) ball.className = 'pb-ball';
+  $('pb-overlay').classList.remove('pb-active');
+
+  // Ocultar todo y mostrar welcome
+  hide($('pokeCard'));
+  hide($('errorState'));
+  hide($('loadingState'));
+  show($('welcomeState'));
+
+  // Reiniciar estado
+  state.currentData = null;
+  state.currentId   = null;
+  state.isFirstLoad = true;
+  state.isShiny     = false;
+
+  // Limpiar búsqueda
+  $('searchInput').value = '';
+
+  // Opcional: reproducir sonido de Pokéball
+  if (!state.muted) {
+    // Pequeño efecto sonoro (opcional)
+  }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -1003,6 +1083,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initFlavorCycle();
   renderRecents();
   $('btnRandom').addEventListener('click', loadRandom);
+  $('btnHome').addEventListener('click', goHome);
+
+  // Botón "Volver al inicio" en el error
+  document.getElementById('btnErrorHome')?.addEventListener('click', goHome);
 
   // Dynamic header height
   const setHeaderH = () => {
@@ -1013,11 +1097,17 @@ document.addEventListener('DOMContentLoaded', () => {
   setHeaderH();
   window.addEventListener('resize', setHeaderH);
 
+  // ── MOSTRAR WELCOME STATE SIN CARGAR NADA AUTOMÁTICAMENTE ──
   show($('welcomeState'));
-  if (!state.recents.length) setTimeout(() => loadPokemon('pikachu'), 500);
-  else loadPokemon(state.recents[0].name);
+  hide($('loadingState'));
+  hide($('errorState'));
+  hide($('pokeCard'));
 
-  // ─── REGISTRO DEL SERVICE WORKER (NUEVO) ───
+  // Opcional: si quieres un Pokémon aleatorio al inicio, descomenta la siguiente línea
+  // setTimeout(() => loadPokemon(Math.floor(Math.random() * 10) + 1), 2000);
+  // Pero recomendamos dejar que el usuario elija manualmente.
+
+  // ── REGISTRO DEL SERVICE WORKER ──
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(reg => console.log('✅ Service Worker registrado con éxito', reg))

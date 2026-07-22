@@ -58,6 +58,12 @@
       </form>
 
       <div class="header-controls">
+        <!-- NUEVO BOTÓN INICIO -->
+        <button class="btn-icon btn-home" id="btnHome" title="Volver al inicio">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V10"/>
+          </svg>
+        </button>
         <button class="btn-icon" id="btnTheme" title="Toggle theme">
           <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/>
@@ -110,17 +116,24 @@
       </div>
     </div>
 
-    <!-- Loading -->
+    <!-- Loading mejorado -->
     <div class="loading-state" id="loadingState">
-      <div class="loader-ring"></div>
+      <div class="loading-content">
+        <div class="pokeball-loading"></div>
+        <p class="loading-message" id="loadingMessage">¡Preparando tu Pokédex!</p>
+        <p class="loading-sub" id="loadingSub">El profesor Oak está revisando sus datos...</p>
+      </div>
     </div>
 
     <!-- Error -->
     <div class="error-state" id="errorState">
       <div class="error-icon">?</div>
-      <h3 class="error-title">Not found in the Pokédex</h3>
-      <p class="error-msg" id="errorMsg">Check the name or number and try again.</p>
-      <button class="starter-chip" id="btnErrorRandom" style="margin-top:1rem">✦ Try a random one</button>
+      <h3 class="error-title">¡Vaya! Algo salió mal</h3>
+      <p class="error-msg" id="errorMsg">No pudimos conectar con el Profesor Oak. Intenta de nuevo o elige un Pokémon popular.</p>
+      <div style="display:flex; gap:0.5rem; margin-top:1rem; flex-wrap:wrap; justify-content:center;">
+        <button class="starter-chip" id="btnErrorRandom">✦ Pokémon aleatorio</button>
+        <button class="starter-chip" id="btnErrorHome">🏠 Volver al inicio</button>
+      </div>
     </div>
 
     <!-- Pokémon card — two panel, viewport fitted -->
